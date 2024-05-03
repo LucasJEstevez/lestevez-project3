@@ -14,8 +14,9 @@ main:
 	
 	//stores canary above buffer (xxxx)
 	//little endian causes the bits to flip, x in UTF-8 is 7x8
-	li t0, 0x78787878
-	sw t0, 20(sp)
+	la t0, canary
+	lw t1, 0(t0)
+	sw t1, 20(sp)
 	
 	//stores ra above canary
 	sw ra, 24(sp)
@@ -27,13 +28,20 @@ main:
 	mv a0, sp
 	call gets
 
+	la t0, 0x78787878
+	lw t0, 0(t0)
+	lw t1, 20(sp)
+	bne t0, t1, kill_program
+
 	mv a0, sp
 	call puts
 
 	# main() epilog
-	lw ra, 20(sp)
-	addi sp, sp, 24
+	lw ra, 24(sp)
+	addi sp, sp, 28
 	ret
+
+
 
 .space 12288
 
@@ -45,6 +53,11 @@ sekret_fn:
 	lw ra, 0(sp)
 	addi sp, sp, 4
 	ret
+
+kill_program:
+li a7, __NR_EXIT
+li a0, 1
+ecall
 
 ##############################################################
 # Add your implementation of puts() and gets() below here
@@ -115,13 +128,7 @@ addi s0, s0, 1
 
 j puts_loop ##
 
-//Error branch
 
-//restore stack items (ra), stack pointer, return
-li a0, -1
-lw ra, 0(sp)
-addi sp, sp, 4
-ret
 puts_exit :
 
 //puts a newline at the end
@@ -170,8 +177,6 @@ lb a0, 0(sp)
 addi sp, sp, 1
 ret
 
-
-
 .data
 prompt:   .ascii  "Enter a message: "
 prompt_end:
@@ -179,3 +184,4 @@ prompt_end:
 .word 0
 sekret_data:
 .word 0x73564753, 0x67384762, 0x79393256, 0x3D514762, 0x0000000A
+canary: .data 0x78787878
