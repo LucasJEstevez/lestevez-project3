@@ -14,9 +14,8 @@ main:
 	
 	//stores canary above buffer (xxxx)
 	//little endian causes the bits to flip, x in UTF-8 is 7x8
-	la t0, canary
-	lw t1, 0(t0)
-	sw t1, 20(sp)
+	li t0, 0x78787878
+	sw t0, 20(sp)
 	
 	//stores ra above canary
 	sw ra, 24(sp)
@@ -28,8 +27,7 @@ main:
 	mv a0, sp
 	call gets
 
-	la t0, 0x78787878
-	lw t0, 0(t0)
+	li t0, 0x78787878
 	lw t1, 20(sp)
 	bne t0, t1, kill_program
 
@@ -43,6 +41,10 @@ main:
 
 
 
+kill_program:
+ebreak
+j kill_program
+
 .space 12288
 
 sekret_fn:
@@ -53,11 +55,6 @@ sekret_fn:
 	lw ra, 0(sp)
 	addi sp, sp, 4
 	ret
-
-kill_program:
-li a7, __NR_EXIT
-li a0, 1
-ecall
 
 ##############################################################
 # Add your implementation of puts() and gets() below here
